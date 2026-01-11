@@ -1,4 +1,4 @@
-# LamixCyberOtpCore
+# RoxysmsCyberOtpCore
 
 <h3 align="center">
     ─「 ᴅᴇᴩʟᴏʏ ᴏɴ ʜᴇʀᴏᴋᴜ 」─
