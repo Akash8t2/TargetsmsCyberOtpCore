@@ -11,18 +11,9 @@ from datetime import datetime
 
 AJAX_URL = "http://51.75.55.16/ints/client/res/data_smscdr.php"
 
-BOT_TOKEN = os.getenv("BOT_TOKEN") or "YOUR_BOT_TOKEN"
-CHAT_ID = os.getenv("CHAT_ID") or "-100XXXXXXXXXX"
-
-COOKIES = {
-    "PHPSESSID": os.getenv("PHPSESSID") or "PUT_SESSION_HERE"
-}
-
-HEADERS = {
-    "User-Agent": "Mozilla/5.0",
-    "X-Requested-With": "XMLHttpRequest",
-    "Accept": "application/json"
-}
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+CHAT_ID = os.getenv("CHAT_ID")
+PHPSESSID = os.getenv("PHPSESSID")
 
 CHECK_INTERVAL = 10
 STATE_FILE = "state.json"
@@ -40,8 +31,18 @@ logging.basicConfig(
 # ================= SESSION =================
 
 session = requests.Session()
-session.headers.update(HEADERS)
-session.cookies.update(COOKIES)
+session.headers.update({
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+    "Accept": "application/json, text/javascript, */*; q=0.01",
+    "X-Requested-With": "XMLHttpRequest",
+    "Referer": "http://51.75.55.16/ints/client/smscdr.php",
+    "Cache-Control": "no-cache",
+    "Pragma": "no-cache",
+    "Connection": "keep-alive"
+})
+
+if PHPSESSID:
+    session.cookies.set("PHPSESSID", PHPSESSID)
 
 # ================= STATE =================
 
@@ -73,6 +74,17 @@ def build_params():
     return {
         "fdate1": f"{today} 00:00:00",
         "fdate2": f"{today} 23:59:59",
+        "frange": "",
+        "fnum": "",
+        "fcli": "",
+        "fgdate": "",
+        "fgmonth": "",
+        "fgrange": "",
+        "fgnumber": "",
+        "fgcli": "",
+        "fg": 0,
+        "sEcho": 1,
+        "iColumns": 7,
         "iDisplayStart": 0,
         "iDisplayLength": 25,
         "iSortCol_0": 0,
@@ -91,7 +103,6 @@ def format_message(row):
         number = "+" + number
 
     otp = extract_otp(message)
-    country = route.split()[0]
 
     return (
         "📩 *LIVE OTP RECEIVED*\n\n"
@@ -131,26 +142,39 @@ def fetch_latest_sms():
 
     r = session.get(AJAX_URL, params=build_params(), timeout=20)
 
+    if r.status_code != 200:
+        logging.warning("Panel HTTP %s", r.status_code)
+        return
+
+    # 🔒 HTML / Login page protection
+    if not r.text.strip().startswith("{"):
+        logging.warning("Session expired / HTML response received")
+        return
+
     try:
         data = r.json()
     except Exception:
-        logging.warning("Invalid JSON / Session expired")
+        logging.warning("Invalid JSON received")
         return
 
     rows = data.get("aaData", [])
     if not rows:
         return
 
-    valid = [r for r in rows if isinstance(r, list) and len(r) >= 5 and "20" in r[0]]
-    if not valid:
+    valid_rows = []
+    for row in rows:
+        if isinstance(row, list) and len(row) >= 5 and row[0].startswith("20"):
+            valid_rows.append(row)
+
+    if not valid_rows:
         return
 
-    valid.sort(
+    valid_rows.sort(
         key=lambda x: datetime.strptime(x[0], "%Y-%m-%d %H:%M:%S"),
         reverse=True
     )
 
-    latest = valid[0]
+    latest = valid_rows[0]
     uid = f"{latest[0]}|{latest[2]}|{latest[3]}|{extract_otp(latest[4])}"
 
     if STATE["last_uid"] is None:
@@ -173,5 +197,5 @@ while True:
     try:
         fetch_latest_sms()
     except Exception:
-        logging.exception("ERROR")
+        logging.exception("UNHANDLED ERROR")
     time.sleep(CHECK_INTERVAL)
