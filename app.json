@@ -1,35 +1,38 @@
 {
-  "name": "ints-live-otp-bot",
-  "description": "ONLY LIVE OTP Forwarder (INTS Panel)",
-  "stack": "heroku-22",
-  "buildpacks": [
-    {
-      "url": "heroku/python"
-    }
+  "name": "Cyber OTP Core Bot",
+  "description": "Live-only OTP forwarding Telegram bot for SMS panels",
+  "repository": "https://github.com/yourusername/your-repo",
+  "logo": "https://telegra.ph/file/9c7c6b2c3a4e7b5e9c.png",
+  "keywords": [
+    "telegram",
+    "otp",
+    "sms",
+    "bot",
+    "python",
+    "cyber"
   ],
   "env": {
-    "AJAX_URL": {
-      "description": "INTS AJAX URL",
-      "value": "http://144.217.66.209/ints/agent/res/data_smscdr.php"
-    },
     "BOT_TOKEN": {
-      "description": "Telegram Bot Token"
+      "description": "Telegram Bot Token from @BotFather",
+      "required": true
     },
     "CHAT_ID": {
-      "description": "Telegram Group Chat ID"
+      "description": "Telegram Channel or Group ID (e.g. -100xxxxxxxxxx)",
+      "required": true
     },
     "PHPSESSID": {
-      "description": "Session cookie PHPSESSID"
+      "description": "Active PHPSESSID cookie from SMS panel",
+      "required": true
     },
-    "CHECK_INTERVAL": {
-      "description": "Check interval seconds",
-      "value": "10"
+    "AJAX_URL": {
+      "description": "SMS panel AJAX endpoint",
+      "value": "http://51.75.55.16/ints/client/res/data_smscdr.php",
+      "required": false
     },
-    "SUPPORT_URL": {
-      "value": "https://t.me/botcasx"
-    },
-    "NUMBERS_URL": {
-      "value": "https://t.me/CyberOTPCore"
+    "TZ": {
+      "description": "Timezone",
+      "value": "Asia/Kolkata",
+      "required": false
     }
   },
   "formation": {
@@ -37,5 +40,12 @@
       "quantity": 1,
       "size": "basic"
     }
-  }
+  },
+  "addons": [],
+  "buildpacks": [
+    {
+      "url": "heroku/python"
+    }
+  ],
+  "stack": "heroku-22"
 }
